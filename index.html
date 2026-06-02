@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Stream - VIP Version</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f0f0f;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* --- BACKGROUND VIDEO --- */
+        #bg-video-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
+        }
+        #bg-video {
+            width: 100%; height: 100%; object-fit: cover; filter: brightness(0.3);
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex; justify-content: space-between; align-items: center; padding: 15px 5%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); position: fixed; width: 100%; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; background: linear-gradient(45deg, #ff0055, #00ddff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: white; }
+        
+        .nav-links { display: flex; list-style: none; gap: 20px; align-items: center; }
+        .nav-links a { color: #fff; text-decoration: none; font-weight: 500; transition: 0.3s; font-size: 0.95rem; }
+        .nav-links a:hover { color: #00ddff; }
+
+        /* --- VIP BUTTON STYLING (GOLD) --- */
+        .vip-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000 !important;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .vip-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+            color: #000;
+        }
+
+        /* --- HERO SECTION --- */
+        header.hero {
+            height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px; position: relative;
+        }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 20px; opacity: 0; animation: fadeInUp 1s forwards 0.5s; }
+        .hero p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0; animation: fadeInUp 1s forwards 0.8s; }
+        .cta-btn {
+            padding: 15px 40px; background: linear-gradient(90deg, #ff0055, #ff5500); border: none; border-radius: 30px;
+            color: white; font-weight: 600; cursor: pointer; transition: 0.3s; opacity: 0; animation: fadeInUp 1s forwards 1.1s;
+        }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); }
+
+        /* --- CATEGORY FILTERS (HORIZONTAL SCROLL) --- */
+        .filter-container {
+            padding: 80px 5% 20px 5%; 
+            background: #111; 
+            /* Flexbox for horizontal scroll */
+            display: flex;
+            overflow-x: auto; 
+            gap: 10px;
+            white-space: nowrap;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            scroll-behavior: smooth;
+        }
+        .filter-container::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome/Safari */
+        
+        .filter-btn {
+            background: #222; border: 1px solid #333; color: #aaa; padding: 10px 25px;
+            border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 0.9rem;
+            flex-shrink: 0; /* Prevent buttons from shrinking */
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: #00ddff; color: #000; border-color: #00ddff; font-weight: 600;
+        }
+
+        /* --- VIDEO GRID --- */
+        .content-section {
+            padding: 40px 5%; background: #111; min-height: 60vh; padding-bottom: 100px;
+        }
+        .video-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;
+        }
+        .card {
+            background: #1a1a1a; border-radius: 12px; overflow: hidden; transition: 0.3s; border: 1px solid #333;
+            position: relative;
+        }
+        .card:hover { transform: translateY(-5px); border-color: #00ddff; }
+        
+        .card-thumb {
+            width: 100%; 
+            height: 230px; 
+            background: #000; 
+            position: relative; 
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .card-thumb img {
+            width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.3s;
+        }
+        .card:hover .card-thumb img { opacity: 1; transform: scale(1.05); }
+        
+        .play-icon {
+            position: absolute; font-size: 3.5rem; color: white; opacity: 0; pointer-events: none; transition: 0.3s; text-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+        .card:hover .play-icon { opacity: 1; transform: scale(1.2); }
+        
+        .card-info { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card-cat { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        /* --- FULLSCREEN MODAL --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+            z-index: 2000; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal.active { opacity: 1; pointer-events: all; }
+        
+        .modal-content { width: 100%; height: 100%; position: relative; background: #000; }
+        .modal-video { width: 100%; height: 100%; object-fit: contain; display: block; outline: none; }
+
+        /* --- BACK BUTTON --- */
+        #home-back-btn {
+            position: absolute; 
+            top: 30px;
+            right: 30px;
+            z-index: 2002;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s;
+            pointer-events: none;
+            transform: translateY(-10px);
+        }
+
+        #home-back-btn.visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        #home-back-btn:hover {
+            background: rgba(255, 0, 85, 0.9);
+        }
+
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed; top: 70px; right: -100%; width: 70%; height: 100vh; background: rgba(0,0,0,0.95);
+                flex-direction: column; padding: 40px; transition: 0.4s;
+            }
+            .nav-links.active { right: 0; }
+            .menu-toggle { display: block; }
+            .hero h1 { font-size: 2rem; }
+            #home-back-btn {
+                top: 20px; right: 20px; padding: 10px 15px; font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BACKGROUND VIDEO -->
+    <div id="bg-video-container">
+        <video id="bg-video" autoplay muted loop playsinline poster="https://picsum.photos/1920/1080">
+            <source src="https://videos.pexels.com/video-files/3129671/3129671-hd_1920_1080_30fps.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- NAVIGATION -->
+    <nav>
+        <div class="logo">MY STREAM</div>
+        <div class="menu-toggle" id="mobile-menu">☰</div>
+        <ul class="nav-links">
+            <li><a href="#" onclick="showAll()">Home</a></li>
+            <li><a href="#library">Library</a></li>
+            <!-- VIP BUTTON LINK -->
+            <li><a href="vip/index.html" class="vip-btn">VIP Videos</a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <h1>Video Collection</h1>
+        <p>Tap any video to play in Fullscreen.</p>
+        <button class="cta-btn" onclick="document.getElementById('library').scrollIntoView({behavior:'smooth'})">Start Watching</button>
+    </header>
+
+    <!-- CATEGORY FILTERS (Horizontal Scroll) -->
+    <div class="filter-container" id="category-filters">
+        <!-- Buttons generated by JS -->
+    </div>
+
+    <!-- LIBRARY GRID -->
+    <section class="content-section" id="library">
+        <div class="video-grid" id="video-grid">
+            <!-- Videos injected here -->
+        </div>
+    </section>
+
+    <!-- FULLSCREEN MODAL -->
+    <div class="modal" id="video-modal">
+        <!-- BACK TO HOME BUTTON -->
+        <button id="home-back-btn" onclick="closeModal()">
+            ← Back to Home
+        </button>
+
+        <div class="modal-content">
+            <video class="modal-video" id="main-player" controls>
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+
+        // 1. Define Category Names
+        const categoryNames = {
+            "01": "Action Movies",
+            "02": "Comedy Shows",
+            "03": "Documentary",
+            "04": "Horror",
+            "05": "Sci-Fi",
+            "06": "Romance",
+            "07": "Thriller",
+            "08": "Cartoons",
+            "09": "Sports",
+            "10": "News",
+            "11": "Music Videos",
+            "12": "Technology",
+            "13": "Travel",
+            "14": "Education"
+        };
+
+        // 2. List Video Files
+        const videoFiles = [
+            "video01(01).mp4", 
+            "video02(01).mp4", 
+            "video01(02).mp4", 
+            "video02(02).mp4", 
+            "video01(03).mp4", 
+            "video01(05).mp4", 
+            "video02(05).mp4", 
+            "video03(05).mp4" 
+        ];
+
+        // 3. Folder Paths
+        const videoFolder = "./videos/"; 
+        const imageFolder = "./images/"; 
+
+        // ==========================================
+        // LOGIC
+        // ==========================================
+        
+        const grid = document.getElementById('video-grid');
+        const modal = document.getElementById('video-modal');
+        const player = document.getElementById('main-player');
+        const bgVideo = document.getElementById('bg-video');
+        const filterContainer = document.getElementById('category-filters');
+        const backBtn = document.getElementById('home-back-btn');
+        
+        let controlsTimeout;
+
+        function init() {
+            renderFilters();
+            showAll(); 
+            setupMobileMenu();
+        }
+
+        // --- FILTERS ---
+        function renderFilters() {
+            const allBtn = document.createElement('button');
+            allBtn.className = 'filter-btn active';
+            allBtn.innerText = 'All';
+            allBtn.onclick = () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                allBtn.classList.add('active');
+                showAll();
+            };
+            filterContainer.appendChild(allBtn);
+
+            for(let i = 1; i <= 14; i++) {
+                const id = i.toString().padStart(2, '0');
+                if(categoryNames[id]) {
+                    const btn = document.createElement('button');
+                    btn.className = 'filter-btn';
+                    btn.innerText = categoryNames[id];
+                    btn.onclick = () => filterByCategory(id, btn);
+                    filterContainer.appendChild(btn);
+                }
+            }
+        }
+
+        // --- DISPLAY ---
+        function showAll() {
+            grid.innerHTML = '';
+            videoFiles.forEach(filename => {
+                createCard(filename);
+            });
+        }
+
+        function filterByCategory(catId, btnElement) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            grid.innerHTML = '';
+            const filtered = videoFiles.filter(file => file.includes(`(${catId})`));
+            
+            if(filtered.length === 0) {
+                grid.innerHTML = '<p style="color:#666; width:100%;">No videos found.</p>';
+            } else {
+                filtered.forEach(filename => createCard(filename));
+            }
+        }
+
+        // --- CARD CREATION (JPG) ---
+        function createCard(filename) {
+            const match = filename.match(/\((.*?)\)/);
+            const catId = match ? match[1] : "00";
+            const catName = categoryNames[catId] || "Unknown";
+            
+            // JPG Logic
+            let imageName = filename.replace('.mp4', '.jpg'); 
+            let thumbUrl = imageFolder + imageName;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // Fallback
+            card.innerHTML = `
+                <div class="card-thumb" onclick="playVideo('${videoFolder}${filename}')">
+                    <img src="${thumbUrl}" 
+                         onerror="this.onerror=null; this.src='https://picsum.photos/seed/${filename}/400/300';" 
+                         alt="Thumb">
+                    <div class="play-icon">▶</div>
+                </div>
+                <div class="card-info">
+                    <div class="card-cat">${catName}</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        }
+
+        // --- PLAYER & FULLSCREEN LOGIC ---
+        function playVideo(path) {
+            player.src = path;
+            modal.classList.add('active');
+            player.play();
+            bgVideo.pause();
+            
+            requestFullScreen(modal);
+            showControls();
+        }
+
+        function closeModal() {
+            exitFullScreen();
+            
+            modal.classList.remove('active');
+            player.pause();
+            player.src = "";
+            bgVideo.play();
+            hideControls();
+        }
+
+        function requestFullScreen(element) {
+            const requestMethod = element.requestFullscreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullscreen;
+            if (requestMethod) {
+                requestMethod.call(element);
+            }
+        }
+
+        function exitFullScreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+
+        // --- CONTROLS VISIBILITY ---
+        function showControls() {
+            backBtn.classList.add('visible');
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                hideControls();
+            }, 3000);
+        }
+
+        function hideControls() {
+            backBtn.classList.remove('visible');
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'home-back-btn') return;
+            showControls();
+        });
+
+        player.addEventListener('play', showControls);
+        player.addEventListener('pause', showControls);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                closeModal();
+            }
+        });
+
+        // --- MOBILE MENU ---
+        function setupMobileMenu() {
+            const menuToggle = document.getElementById('mobile-menu');
+            const navLinks = document.querySelector('.nav-links');
+            menuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
